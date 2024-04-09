@@ -1,0 +1,61 @@
+rn,final id,id,species,site,specimen.date,wing,trial,pixel to mm2,L.R,flip?,notes,length
+479,KEB_00204,204,augochlorella striata,r,7/11/2019,1,1,0.016,l,y,,1.2594
+480,KEB_00204,204,augochlorella striata,r,7/11/2019,1,2,0.016,l,y,,1.2594
+481,KEB_00204,204,augochlorella striata,r,7/11/2019,2,1,0.016,r,n,,1.2594
+482,KEB_00204,204,augochlorella striata,r,7/11/2019,2,2,0.016,r,n,,1.2594
+483,KEB_00258,258,augochlorella striata,r,7/12/2019,1,1,0.016,l,y,,1.4288
+484,KEB_00258,258,augochlorella striata,r,7/12/2019,1,2,0.016,l,y,,1.4288
+485,KEB_00258,258,augochlorella striata,r,7/12/2019,2,1,0.016,r,n,,1.4288
+486,KEB_00258,258,augochlorella striata,r,7/12/2019,2,2,0.016,r,n,,1.4288
+487,KEB_00265,265,augochlorella striata,r,7/12/2019,1,1,0.016,l,y,,1.31552
+488,KEB_00265,265,augochlorella striata,r,7/12/2019,1,2,0.016,l,y,,1.31552
+489,KEB_00265,265,augochlorella striata,r,7/12/2019,2,1,0.016,r,n,,1.31552
+,,265,augochlorella striata,r,7/12/2019,2,2,0.016,r,n,,1.31552
+491,KEB_00309,309,augochlorella striata,r,7/15/2019,1,1,0.016,l,y,,1.31676
+492,KEB_00309,309,augochlorella striata,r,7/15/2019,1,2,0.016,l,y,,1.31676
+499,KEB_00462,462,augochlorella striata,r,7/23/2019,1,1,0.016,l,y,,1.28808
+500,KEB_00462,462,augochlorella striata,r,7/23/2019,1,2,0.016,l,y,,1.28808
+501,KEB_00462,462,augochlorella striata,r,7/23/2019,2,1,0.016,r,n,,1.28808
+502,KEB_00462,462,augochlorella striata,r,7/23/2019,2,2,0.016,r,n,,1.28808
+505,KEB_00505,505,augochlorella striata,c,7/25/2019,1,1,0.016,l,y,,1.26052
+506,KEB_00505,505,augochlorella striata,c,7/25/2019,1,2,0.016,l,y,,1.26052
+507,KEB_00505,505,augochlorella striata,c,7/25/2019,2,1,0.016,r,n,,1.26052
+508,KEB_00505,505,augochlorella striata,c,7/25/2019,2,2,0.016,r,n,,1.26052
+509,KEB_00506,506,augochlorella striata,c,7/25/2019,1,1,0.016,l,y,,1.30044
+510,KEB_00506,506,augochlorella striata,c,7/25/2019,1,2,0.016,l,y,,1.30044
+511,KEB_00506,506,augochlorella striata,c,7/25/2019,2,1,0.016,r,n,,1.30044
+512,KEB_00506,506,augochlorella striata,c,7/25/2019,2,2,0.016,r,n,,1.30044
+529,KEB_00592,592,augochlorella striata,r,7/29/2019,1,1,0.016,l,y,,1.46736
+530,KEB_00592,592,augochlorella striata,r,7/29/2019,1,2,0.016,r,y,,1.46736
+531,KEB_00592,592,augochlorella striata,r,7/29/2019,2,1,0.016,r,n,,1.46736
+532,KEB_00592,592,augochlorella striata,r,7/29/2019,2,2,0.016,r,n,,1.46736
+537,KEB_00613,613,augochlorella striata,r,7/29/2019,1,1,0.016,l,y,,1.3582
+538,KEB_00613,613,augochlorella striata,r,7/29/2019,1,2,0.016,l,y,,1.3582
+539,KEB_00613,613,augochlorella striata,r,7/29/2019,2,1,0.016,r,n,,1.3582
+540,KEB_00613,613,augochlorella striata,r,7/29/2019,2,2,0.016,r,n,,1.3582
+541,KEB_00633,633,augochlorella striata,c,7/29/2019,1,1,0.01,r,y,,1.163475
+542,KEB_00633,633,augochlorella striata,c,7/29/2019,1,2,0.01,r,y,,1.163475
+543,KEB_00633,633,augochlorella striata,c,7/29/2019,2,1,0.01,l,n,,1.163475
+544,KEB_00633,633,augochlorella striata,c,7/29/2019,2,2,0.01,l,n,,1.163475
+555,KEB_00874,874,augochlorella striata,c,8/29/2019,2,1,0.016,r,n,,1.1451
+556,KEB_00874,874,augochlorella striata,c,8/29/2019,2,2,0.016,r,n,,1.1451
+557,KEB_00880,880,augochlorella striata,r,8/29/2019,1,1,0.016,l,y,,1.52852
+558,KEB_00880,880,augochlorella striata,r,8/29/2019,1,2,0.016,l,y,,1.52852
+573,KEB_01000,1000,augochlorella striata,c,9/20/2019,1,1,0.016,l,y,,1.227
+574,KEB_01000,1000,augochlorella striata,c,9/20/2019,1,2,0.016,l,y,,1.227
+575,KEB_01000,1000,augochlorella striata,c,9/20/2019,2,1,0.016,r,n,,1.227
+576,KEB_01000,1000,augochlorella striata,c,9/20/2019,2,2,0.016,r,n,,1.227
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
