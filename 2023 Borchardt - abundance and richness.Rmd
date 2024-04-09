@@ -1,0 +1,49 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+library(lme4)
+library(car)
+library(ggplot2)
+library(nortest)
+
+se <- function(x) {
+  sd(x)/sqrt(length(x))
+}
+```
+
+
+```{r}
+data <- read.csv("C:/Users/Tommi Boshark/Desktop/2019 FFAR Github/done/2023 Borchardt - abundance and richness.csv")
+data
+data$avg.temp <- (data$temp.end + data$temp.start)/2
+data$avg.wind <- (data$wind.start.mph + data$wind.end.mph)/2
+data$abund <- as.numeric(data$abund)
+data$rich <- as.numeric(data$rich)
+```
+
+```{r}
+ggplot(data, aes(x = abund)) + geom_histogram()
+
+ggplot(data, aes(x = rich)) + geom_histogram()
+
+```
+
+
+
+```{r}
+model.a <- glm(abund ~ avg.temp + avg.wind + month + trmt, data = data, family = poisson())
+ggplot(model.a, aes(x = model.a$residuals)) + geom_histogram()
+ad.test(model.a$residuals)
+summary(model.a)
+Anova(model.a)
+
+model.d <- lm(rich ~ avg.temp + avg.wind + month + trmt, data = data, family = poisson())
+ggplot(model.d, aes(x = model.d$residuals)) + geom_histogram()
+ad.test(model.d$residuals)
+summary(model.d)
+Anova(model.d)
+```
+

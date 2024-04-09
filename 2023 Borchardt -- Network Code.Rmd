@@ -1,0 +1,1064 @@
+---
+title: "2019 STRIPS Networks"
+output: html_document
+---
+
+#REQUIRED LIBRARY FOR WORKSHEET
+```{r}
+library(lme4)
+library(ggplot2)
+library('bipartite')
+library(gridExtra)
+library(PairedData)
+library(vegan)
+library(BayesFactor)
+library(pwr)
+```
+
+#RAW NETWORK TRAITS
+##LOADING DATA FILES 
+```{r}
+#create csv files of the individual site matrices from the 2023 Borchardt - full network workbook.xlsx. I named the files by the site code and the treatment code with no period. 
+
+#setwd("")
+
+con <- read.csv("control.csv")
+con.net <- as.matrix(con[,2:44])#ensuring the correct area is used, sometimes there are blank rows or columns
+dimnames(con.net)[[1]] <- con[,1]
+
+rest <- read.csv("restored.csv")
+rest.net <- as.matrix(rest[,2:77])
+dimnames(rest.net)[[1]] <- rest[,1]
+
+gut.c <- read.csv("gutc.csv")
+gutc.net <- as.matrix(gut.c[,2:16])
+dimnames(gutc.net)[[1]] <- gut.c[,1]
+
+gut.r <- read.csv("gutr.csv")
+gutr.net <- as.matrix(gut.r[,2:35])
+dimnames(gutr.net)[[1]] <- gut.r[,1]
+
+sme.c <- read.csv("smec.csv")
+smec.net <- as.matrix(sme.c[,2:12])
+dimnames(smec.net)[[1]] <- sme.c[,1]
+
+sme.r <- read.csv("smer.csv")
+smer.net <- as.matrix(sme.r[,2:38])
+dimnames(smer.net)[[1]] <- sme.r[,1]
+
+smi.c <- read.csv("smic.csv")
+smic.net <- as.matrix(smi.c[,2:6])
+dimnames(smic.net)[[1]] <- smi.c[,1]
+
+smi.r <- read.csv("smir.csv")
+smir.net <- as.matrix(smi.r[,2:26])
+dimnames(smir.net)[[1]] <- smi.r[,1]
+
+sto.c <- read.csv("stoc.csv")
+stoc.net <- as.matrix(sto.c[,2:28])
+dimnames(stoc.net)[[1]] <- sto.c[,1]
+
+sto.r <- read.csv("stor.csv")
+stor.net <- as.matrix(sto.r[,2:33])
+dimnames(stor.net)[[1]] <- sto.r[,1]
+
+who.c <- read.csv("whoc.csv")
+whoc.net <- as.matrix(who.c[,2:12])
+dimnames(whoc.net)[[1]] <- who.c[,1]
+
+who.r <- read.csv("whor.csv")
+whor.net <- as.matrix(who.r[,2:29])
+dimnames(whor.net)[[1]] <- who.r[,1]
+
+```
+
+##NETWORK GRAPHS
+###TREATMENT CUMULATIVE
+```{r}
+plotweb(rest.net, text.rot=90, empty = FALSE, ybig = 1.5, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+plotweb(con.net, text.rot=90, empty = FALSE, ybig = 1.5, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+```
+
+
+###FOR EACH SITE.TREATMENT
+```{r}
+plotweb(gutc.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+plotweb(gutr.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+
+plotweb(smec.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+plotweb(smer.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+
+plotweb(smic.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+plotweb(smir.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+
+plotweb(stor.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+plotweb(stoc.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+
+plotweb(whor.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#00BFC4", labsize = 1)
+plotweb(whoc.net, text.rot=90, empty = FALSE, ybig = 2.0, y.width.high = 0.03, y.width.low = 0.03, col.interaction = "#F8766D", labsize = 1)
+```
+
+##SIMPLE NETWORK TRAITS
+###CALCULATING NETWORK TRAITS
+
+```{r}
+
+#do total links per species, then multiple by total species (# rows + # columns) and then divide by bee or plant species (# rows or # columns)
+linksb <- c(
+  as.numeric(networklevel(gutr.net, index = "links per species")*(nrow(gutr.net) + ncol(gutr.net)) / ncol(gutr.net)), 
+  as.numeric(networklevel(gutc.net, index = "links per species")*(nrow(gutc.net) + ncol(gutc.net)) / ncol(gutc.net)), 
+  as.numeric(networklevel(smer.net, index = "links per species")*(nrow(smer.net) + ncol(smer.net)) / ncol(smer.net)), 
+  as.numeric(networklevel(smec.net, index = "links per species")*(nrow(smec.net) + ncol(smec.net)) / ncol(smec.net)), 
+  as.numeric(networklevel(smir.net, index = "links per species")*(nrow(smir.net) + ncol(smir.net)) / ncol(smir.net)), 
+  as.numeric(networklevel(smic.net, index = "links per species")*(nrow(smic.net) + ncol(smic.net)) / ncol(smic.net)),
+  as.numeric(networklevel(stor.net, index = "links per species")*(nrow(stor.net) + ncol(stor.net)) / ncol(stor.net)),
+  as.numeric(networklevel(stoc.net, index = "links per species")*(nrow(stoc.net) + ncol(stoc.net)) / ncol(stoc.net)),
+  as.numeric(networklevel(whor.net, index = "links per species")*(nrow(whor.net) + ncol(whor.net)) / ncol(whor.net)),
+  as.numeric(networklevel(whoc.net, index = "links per species")*(nrow(whoc.net) + ncol(whoc.net)) / ncol(whoc.net)))
+
+linksp <- c(
+  as.numeric(networklevel(gutr.net, index = "links per species")*(nrow(gutr.net) + ncol(gutr.net)) / nrow(gutr.net)), 
+  as.numeric(networklevel(gutc.net, index = "links per species")*(nrow(gutc.net) + ncol(gutc.net)) / nrow(gutc.net)), 
+  as.numeric(networklevel(smer.net, index = "links per species")*(nrow(smer.net) + ncol(smer.net)) / nrow(smer.net)), 
+  as.numeric(networklevel(smec.net, index = "links per species")*(nrow(smec.net) + ncol(smec.net)) / nrow(smec.net)), 
+  as.numeric(networklevel(smir.net, index = "links per species")*(nrow(smir.net) + ncol(smir.net)) / nrow(smir.net)), 
+  as.numeric(networklevel(smic.net, index = "links per species")*(nrow(smic.net) + ncol(smic.net)) / nrow(smic.net)),
+  as.numeric(networklevel(stor.net, index = "links per species")*(nrow(stor.net) + ncol(stor.net)) / nrow(stor.net)),
+  as.numeric(networklevel(stoc.net, index = "links per species")*(nrow(stoc.net) + ncol(stoc.net)) / nrow(stoc.net)),
+  as.numeric(networklevel(whor.net, index = "links per species")*(nrow(whor.net) + ncol(whor.net)) / nrow(whor.net)),
+  as.numeric(networklevel(whoc.net, index = "links per species")*(nrow(whoc.net) + ncol(whoc.net)) / nrow(whoc.net)))
+
+h2 <- c(
+  as.numeric(networklevel(gutr.net, index = "H2")),
+  as.numeric(networklevel(gutc.net, index = "H2")),
+  as.numeric(networklevel(smer.net, index = "H2")),
+  as.numeric(networklevel(smec.net, index = "H2")),
+  as.numeric(networklevel(smir.net, index = "H2")),
+  as.numeric(networklevel(smic.net, index = "H2")),
+  as.numeric(networklevel(stor.net, index = "H2")),
+  as.numeric(networklevel(stoc.net, index = "H2")),
+  as.numeric(networklevel(whor.net, index = "H2")),
+  as.numeric(networklevel(whoc.net, index = "H2")))
+
+nodf <- c(
+  as.numeric(networklevel(gutr.net, index = "NODF")),
+  as.numeric(networklevel(gutc.net, index = "NODF")),
+  as.numeric(networklevel(smer.net, index = "NODF")),
+  as.numeric(networklevel(smec.net, index = "NODF")),
+  as.numeric(networklevel(smir.net, index = "NODF")),
+  as.numeric(networklevel(smic.net, index = "NODF")),
+  as.numeric(networklevel(stor.net, index = "NODF")),
+  as.numeric(networklevel(stoc.net, index = "NODF")),
+  as.numeric(networklevel(whor.net, index = "NODF")),
+  as.numeric(networklevel(whoc.net, index = "NODF")))
+
+
+site <- c("gut", "gut", "sme", "sme", "smi", "smi", "sto", "sto", "who", "who")
+trmt <- c("r", "c", "r", "c", "r", "c", "r", "c", "r", "c")
+
+value <- c(#links, 
+           h2, nodf, linksb, linksp)
+test <- c(#rep("Links per Species", 10), 
+          rep("Network-Level Specialization", 10), rep("Weighted Nestedness", 10), rep("Links per Bee Species", 10), rep("Links per Plant Species", 10))
+site2 <- c(rep(site, 4))
+trmt2 <- c(rep(trmt, 4))
+
+table2 <- data.frame(value, test, site2, trmt2)
+```
+
+###CALCULATING NETWORK TRAIT MEANS & VARIANCE
+```{r}
+data.p <- data.frame(site, trmt, links, h2, nodf, linksb, linksp)
+data.p$group <- data.p$trmt
+
+means <- c(#mean(subset(data.p, trmt == "r", links, drop = TRUE)), 
+          #mean(subset(data.p, trmt == "c", links, drop = TRUE)),
+          mean(subset(data.p, trmt == "r", h2, drop = TRUE)),
+          mean(subset(data.p, trmt == "c", h2, drop = TRUE)), 
+          mean(subset(data.p, trmt == "r", nodf, drop = TRUE)), 
+          mean(subset(data.p, trmt == "c", nodf, drop = TRUE)),
+          mean(subset(data.p, trmt == "r", linksb, drop = TRUE)), 
+          mean(subset(data.p, trmt == "c", linksb, drop = TRUE)),
+          mean(subset(data.p, trmt == "r", linksp, drop = TRUE)), 
+          mean(subset(data.p, trmt == "c", linksp, drop = TRUE)))
+
+sd <- c(#sd(subset(data.p, group == "r", links, drop = TRUE)), 
+          #sd(subset(data.p, group == "c", links, drop = TRUE)),
+          sd(subset(data.p, group == "r", h2, drop = TRUE)), 
+          sd(subset(data.p, group == "c", h2, drop = TRUE)), 
+          sd(subset(data.p, group == "r", nodf, drop = TRUE)), 
+          sd(subset(data.p, group == "c", nodf, drop = TRUE)),
+          sd(subset(data.p, group == "r", linksb, drop = TRUE)), 
+          sd(subset(data.p, group == "c", linksb, drop = TRUE)),
+          sd(subset(data.p, group == "r", linksp, drop = TRUE)), 
+          sd(subset(data.p, group == "c", linksp, drop = TRUE)))
+
+serr <- function(x) sd(x)/sqrt(length(x))
+se <- c(#serr(subset(data.p, group == "r", links, drop = TRUE)), 
+          #serr(subset(data.p, group == "c", links, drop = TRUE)),
+          serr(subset(data.p, group == "r", h2, drop = TRUE)), 
+          serr(subset(data.p, group == "c", h2, drop = TRUE)), 
+          serr(subset(data.p, group == "r", nodf, drop = TRUE)), 
+          serr(subset(data.p, group == "c", nodf, drop = TRUE)), 
+          serr(subset(data.p, group == "r", linksb, drop = TRUE)), 
+          serr(subset(data.p, group == "c", linksb, drop = TRUE)), 
+          serr(subset(data.p, group == "r", linksp, drop = TRUE)), 
+          serr(subset(data.p, group == "c", linksp, drop = TRUE)))
+
+test <- c("Network-Level Specialization", "Network-Level Specialization", 
+          "Weighted Nestedness", "Weighted Nestedness", 
+          "Links per Bee Species", "Links per Bee Species", 
+          "Links per Plant Species", "Links per Plant Species")
+Treatment <- c("Prairie Strip", "Crop Field",
+               "Prairie Strip", "Crop Field",
+               "Prairie Strip", "Crop Field",
+               "Prairie Strip", "Crop Field")
+
+table <- data.frame(test, Treatment, means, sd, se)
+```
+
+###BAR GRAPHS & Wilcoxon tests
+```{r}
+#Overall Graphs, all together with facet_wrap
+
+
+ggplot(data = table2, aes(x = trmt2, y = value, color = trmt2)) + geom_point(lwd = 3, position = "jitter")  + xlab("") + facet_wrap(~test, scales = "free", ncol = 5) + ylab("Average Value and SE of Sites") #+ coord_cartesian(ylim = c(c(1, 5.75),c(0.5, 4.5), c(0, 1), c(0,45)))
+
+tempa <- subset(table2, table2$test == "Links per Bee Species")
+a <- ggplot(data = tempa, aes(x = trmt2, y = value, color = trmt2)) + geom_point(size = 3, lwd = 3, position = "jitter")  + xlab("") + ylab("Raw Network Metric Values") + ylim(0,5.5) + theme(legend.position = "none")
+
+tempb <- subset(table2, table2$test == "Links per Plant Species")
+b <- ggplot(data = tempb, aes(x = trmt2, y = value, color = trmt2)) + geom_point(size = 3,lwd = 3, position = "jitter")  + xlab("") + ylab("") + ylim(0,4.5) + theme(legend.position = "none")
+
+options(repr.plot.width =9, repr.plot.height =9)
+
+tempc <- subset(table2, table2$test == "Network-Level Specialization")
+c <- ggplot(data = tempc, aes(x = trmt2, y = value, color = trmt2)) + geom_point(size = 3,lwd = 3, position = "jitter")  + xlab("") + ylab("") + ylim(0,1) + theme(legend.position = "none")
+
+tempd <- subset(table2, table2$test == "Weighted Nestedness")
+d <- ggplot(data = tempd, aes(x = trmt2, y = value, color = trmt2)) + geom_point(size = 3,lwd = 3, position = "jitter")  + xlab("") + ylab("") + ylim(0,100) + theme(legend.position = "none")
+
+grid.arrange(a,b,c,d, nrow = 1)
+
+```
+
+```{r}
+ggplot(data = table2, aes(x = trmt2, y = value, color = trmt2)) + geom_boxplot() + xlab("") + facet_wrap(~test, scales = "free")
+
+wilcox.test(linksb ~trmt) 
+wilcox.test(linksp ~trmt) 
+wilcox.test(h2 ~trmt) 
+wilcox.test(nodf ~trmt) 
+
+```
+
+##NULL MODELS
+###CALCULATIONS
+####H2
+```{r, results = "hide"}
+#H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---H2----H2---
+
+
+#WHORLE CONTROL
+who.c.b <- ifelse(whoc.net == 0, 0, 1)
+obs <- unlist(networklevel(who.c.b, index="H2"))
+nulls <- nullmodel(who.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Whorle Control vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c( ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c( (obs - mean(null)) / sd(null)) #Z-score
+
+#WHORLE RESTORED
+who.r.b <- ifelse(whor.net == 0, 0, 1)
+obs <- unlist(networklevel(who.r.b, index="H2"))
+nulls <- nullmodel(who.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Whorle Restored vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#STONE CONTROL
+sto.c.b <- ifelse(stoc.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.c.b, index="H2"))
+nulls <- nullmodel(sto.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Stone Control vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#STONE RESTORED
+sto.r.b <- ifelse(stor.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.r.b, index="H2"))
+nulls <- nullmodel(sto.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Stone Restored vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#SMITH CONTROL
+smi.c.b <- ifelse(smic.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.c.b, index="H2"))
+nulls <- nullmodel(smi.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smith control vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#SMITH RESTORED
+smi.r.b <- ifelse(smir.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.r.b, index="H2"))
+nulls <- nullmodel(smi.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smith Restored vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#SMELTZER CONTROL
+sme.c.b <- ifelse(smec.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.c.b, index="H2"))
+nulls <- nullmodel(sme.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smeltzer control vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#SMELTZER RESTORED
+sme.r.b <- ifelse(smer.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.r.b, index="H2"))
+nulls <- nullmodel(sme.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smeltzer Restored vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#GUTHRIE CONTROL
+gut.c.b <- ifelse(gutc.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.c.b, index="H2"))
+nulls <- nullmodel(gut.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="guthrie control vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+#GUTHRIE RESTORED
+gut.r.b <- ifelse(gutr.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.r.b, index="H2"))
+nulls <- nullmodel(gut.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="H2"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "H2 Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+ph <- c(ph, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zh <- c(zh, (obs - mean(null)) / sd(null)) #Z-score
+
+```
+####Links per Plant Species
+```{r, results = "hide"}
+#LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES
+#PLANTS---PLANTS
+
+#WHORLE CONTROL
+who.c.b <- ifelse(whoc.net == 0, 0, 1)
+obs <- unlist(networklevel(who.c.b, index="links per species"))*(nrow(whoc.net) + ncol(whoc.net))/ncol(whoc.net)
+nulls <- nullmodel(who.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(whoc.net) + ncol(whoc.net))/ncol(whoc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c((obs - mean(null)) / sd(null)) #Z-score
+
+#WHORLE RESTORED
+who.r.b <- ifelse(whor.net == 0, 0, 1)
+obs <- unlist(networklevel(who.r.b, index="links per species"))*(nrow(whor.net) + ncol(whor.net))/ncol(whor.net)
+nulls <- nullmodel(who.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(whor.net) + ncol(whor.net))/ncol(whor.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE CONTROL
+sto.c.b <- ifelse(stoc.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.c.b, index="links per species"))*(nrow(stoc.net) + ncol(stoc.net))/ncol(stoc.net)
+nulls <- nullmodel(sto.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(stoc.net) + ncol(stoc.net))/ncol(stoc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE RESTORED
+sto.r.b <- ifelse(stor.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.r.b, index="links per species"))*(nrow(stor.net) + ncol(stor.net))/ncol(stor.net)
+nulls <- nullmodel(sto.r.b, N=100, method=1, autotransform="equiprobable", replace = TRUE)
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(stor.net) + ncol(stor.net))/ncol(stor.net)
+plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH CONTROL
+smi.c.b <- ifelse(smic.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.c.b, index="links per species"))*(nrow(smic.net) + ncol(smic.net))/ncol(smic.net)
+nulls <- nullmodel(smi.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smic.net) + ncol(smic.net))/ncol(smic.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH RESTORED
+smi.r.b <- ifelse(smir.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.r.b, index="links per species"))*(nrow(smir.net) + ncol(smir.net))/ncol(smir.net)
+nulls <- nullmodel(smi.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smir.net) + ncol(smir.net))/ncol(smir.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER CONTROL
+sme.c.b <- ifelse(smec.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.c.b, index="links per species"))*(nrow(smec.net) + ncol(smec.net))/ncol(smec.net)
+nulls <- nullmodel(sme.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smec.net) + ncol(smec.net))/ncol(smec.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER RESTORED
+sme.r.b <- ifelse(smer.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.r.b, index="links per species"))*(nrow(smer.net) + ncol(smer.net))/ncol(smer.net)
+nulls <- nullmodel(sme.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smer.net) + ncol(smer.net))/ncol(smer.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE CONTROL
+gut.c.b <- ifelse(gutc.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.c.b, index="links per species"))*(nrow(gutc.net) + ncol(gutc.net))/ncol(gutc.net)
+nulls <- nullmodel(gut.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(gutc.net) + ncol(gutc.net))/ncol(gutc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE RESTORED
+gut.r.b <- ifelse(gutr.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.r.b, index="links per species"))*(nrow(gutr.net) + ncol(gutr.net))/ncol(gutr.net)
+nulls <- nullmodel(gut.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(gutr.net) + ncol(gutr.net))/ncol(gutr.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plp <- c(plp, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlp <- c(zlp, (obs - mean(null)) / sd(null)) #Z-score
+```
+####Links per Bee Species
+```{r, results = "hide"}
+#LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES---LINKS PER SPECIES
+#BEES---BEES
+
+
+#WHORLE CONTROL
+who.c.b <- ifelse(whoc.net == 0, 0, 1)
+obs <- unlist(networklevel(who.c.b, index="links per species"))*(nrow(whoc.net) + ncol(whoc.net))/nrow(whoc.net)
+nulls <- nullmodel(who.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(whoc.net) + ncol(whoc.net))/nrow(whoc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c((obs - mean(null)) / sd(null)) #Z-score
+
+#WHORLE RESTORED
+who.r.b <- ifelse(whor.net == 0, 0, 1)
+obs <- unlist(networklevel(who.r.b, index="links per species"))*(nrow(whor.net) + ncol(whor.net))/nrow(whor.net)
+nulls <- nullmodel(who.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(whor.net) + ncol(whor.net))/nrow(whor.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE CONTROL
+sto.c.b <- ifelse(stoc.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.c.b, index="links per species"))*(nrow(stoc.net) + ncol(stoc.net))/nrow(stoc.net)
+nulls <- nullmodel(sto.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(stoc.net) + ncol(stoc.net))/nrow(stoc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE RESTORED
+sto.r.b <- ifelse(stor.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.r.b, index="links per species"))*(nrow(stor.net) + ncol(stor.net))/nrow(stor.net)
+nulls <- nullmodel(sto.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(stor.net) + ncol(stor.net))/nrow(stor.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH CONTROL
+smi.c.b <- ifelse(smic.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.c.b, index="links per species"))*(nrow(smic.net) + ncol(smic.net))/nrow(smic.net)
+nulls <- nullmodel(smi.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smic.net) + ncol(smic.net))/nrow(smic.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH RESTORED
+smi.r.b <- ifelse(smir.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.r.b, index="links per species"))*(nrow(smir.net) + ncol(smir.net))/nrow(smir.net)
+nulls <- nullmodel(smi.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smir.net) + ncol(smir.net))/nrow(smir.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER CONTROL
+sme.c.b <- ifelse(smec.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.c.b, index="links per species"))*(nrow(smec.net) + ncol(smec.net))/nrow(smec.net)
+nulls <- nullmodel(sme.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smec.net) + ncol(smec.net))/nrow(smec.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER RESTORED
+sme.r.b <- ifelse(smer.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.r.b, index="links per species"))*(nrow(smer.net) + ncol(smer.net))/nrow(smer.net)
+nulls <- nullmodel(sme.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(smer.net) + ncol(smer.net))/nrow(smer.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE CONTROL
+gut.c.b <- ifelse(gutc.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.c.b, index="links per species"))*(nrow(gutc.net) + ncol(gutc.net))/nrow(gutc.net)
+nulls <- nullmodel(gut.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(gutc.net) + ncol(gutc.net))/nrow(gutc.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE RESTORED
+gut.r.b <- ifelse(gutr.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.r.b, index="links per species"))*(nrow(gutr.net) + ncol(gutr.net))/nrow(gutr.net)
+nulls <- nullmodel(gut.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="links per species"))*(nrow(gutr.net) + ncol(gutr.net))/nrow(gutr.net)
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "links per species Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+plb <- c(plb, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+zlb <- c(zlb, (obs - mean(null)) / sd(null)) #Z-score
+```
+####NODF
+```{r, results = "hide"}
+#NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---NODF---
+
+#WHORLE CONTROL
+who.c.b <- ifelse(whoc.net == 0, 0, 1)
+obs <- unlist(networklevel(who.c.b, index="NODF"))
+nulls <- nullmodel(who.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Whorle Control vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c((obs - mean(null)) / sd(null)) #Z-score
+
+#WHORLE RESTORED
+who.r.b <- ifelse(whor.net == 0, 0, 1)
+obs <- unlist(networklevel(who.r.b, index="NODF"))
+nulls <- nullmodel(who.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Whorle Restored vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE CONTROL
+sto.c.b <- ifelse(stoc.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.c.b, index="NODF"))
+nulls <- nullmodel(sto.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Stone Control vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#STONE RESTORED
+sto.r.b <- ifelse(stor.net == 0, 0, 1)
+obs <- unlist(networklevel(sto.r.b, index="NODF"))
+nulls <- nullmodel(sto.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Stone Restored vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH CONTROL
+smi.c.b <- ifelse(smic.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.c.b, index="NODF"))
+nulls <- nullmodel(smi.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smith control vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMITH RESTORED
+smi.r.b <- ifelse(smir.net == 0, 0, 1)
+obs <- unlist(networklevel(smi.r.b, index="NODF"))
+nulls <- nullmodel(smi.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smith Restored vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER CONTROL
+sme.c.b <- ifelse(smec.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.c.b, index="NODF"))
+nulls <- nullmodel(sme.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smeltzer control vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#SMELTZER RESTORED
+sme.r.b <- ifelse(smer.net == 0, 0, 1)
+obs <- unlist(networklevel(sme.r.b, index="NODF"))
+nulls <- nullmodel(sme.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Smeltzer Restored vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE CONTROL
+gut.c.b <- ifelse(gutc.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.c.b, index="NODF"))
+nulls <- nullmodel(gut.c.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="guthrie control vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2)
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+
+#GUTHRIE RESTORED
+gut.r.b <- ifelse(gutr.net == 0, 0, 1)
+obs <- unlist(networklevel(gut.r.b, index="NODF"))
+nulls <- nullmodel(gut.r.b, N=100, method=1, autotransform="equiprobable")
+null <- unlist(sapply(nulls, networklevel, index="NODF"))
+#plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+#     main="Guthrie Restored vs Null Models", xlab = "NODF Metric")
+#abline(v=obs, col="red", lwd=2) 
+praw <- sum(null>obs) / length(null)
+pnf <- c(pnf, ifelse(praw > 0.5, 1-praw, praw))    # P-value
+znf <- c(znf, (obs - mean(null)) / sd(null)) #Z-score
+
+```
+
+
+###NULL MODEL GRAPHS
+```{r}
+#zn, pn
+#zc, pc
+#zl, pl
+
+site <- (rep(c("WHO", "WHO", "STO", "STO", "SMI", "SMI", "SME", "SME", "GUT", "GUT"), 4))
+Treatment <- c(rep(c("r", "c"), 20))
+test <- c(rep("Network-Level Specialization", 10), rep("Links per Plant Species", 10), rep("Links per Bee Species", 10), rep("Nestedness (NODF)", 10))
+z.score <- c(paste(zh), paste(zlp), paste(zlb), paste(znf))
+p.value <- c(paste(ph), paste(plp), paste(plb), paste(pnf))
+
+data <- data.frame(test, site, Treatment, z.score, p.value)
+data
+
+ggplot(data, aes(x = Treatment, y = as.numeric(z.score), color = Treatment)) + geom_point(position = "jitter") + facet_wrap(~test, ncol = 4) + ylab("Z Scores") + scale_color_discrete(labels = c("Crop Fields", "Prairie Strips")) + geom_hline(yintercept = 0, lty = 2)
+
+ggplot(data, aes(x = Treatment, y = as.numeric(p.value), color = Treatment)) + geom_point(position = "jitter") + facet_grid(~test, scales = "free") + ylab("P-Values")+ scale_color_discrete(labels = c("Crop Fields", "Prairie Strips")) + geom_hline(yintercept = 0.05, lty = 2)
+
+#write.csv(data, "")
+```
+
+
+##RAREFACTION
+###Calculating smallest networks
+```{r}
+#smallest number of rows is 16
+nrow(gutr.net)
+nrow(gutc.net)
+nrow(smer.net)
+nrow(smec.net)#16
+nrow(smir.net)
+nrow(smic.net)
+nrow(stor.net)
+nrow(stoc.net)
+nrow(whor.net)
+nrow(whoc.net)
+
+#smallest number of columns is 5 and 11
+ncol(gutr.net)
+ncol(gutc.net)
+ncol(smer.net)
+ncol(smec.net)#11
+ncol(smir.net)
+ncol(smic.net)#5
+ncol(stor.net)
+ncol(stoc.net)
+ncol(whor.net)
+ncol(whoc.net)#11
+```
+
+
+###calculating traits
+```{r}
+
+rcrare <- function(x, r, c, ind) {
+ test <- vector(mode = "numeric", length =  1000)
+ ComLoop <- vector(mode = "numeric", length =  1000)
+  for(i in seq_along(ComLoop)) {
+  m1 <- x[sample(x = seq_len(nrow(x)), size = r, replace = FALSE), sample(x = seq_len(ncol(x)), size = c, replace = FALSE)]
+  
+  for(j in 1:c) {
+    while(sum(m1[,j]) == 0) {
+      m1 <- x[sample(x = seq_len(nrow(x)), size = r, replace = FALSE), sample(x = seq_len(ncol(x)), size = c, replace = FALSE)]
+    }
+  }
+  
+  test[[i]] <- networklevel(m1, index = ind)
+  }
+ for(j in 1:length(test)) {
+   ifelse(is.na(test[[j]]), networklevel(x[sample(x = seq_len(nrow(x)), size = r), sample(x = seq_len(ncol(x)), size = c)], index = ind), test[[j]])
+ }
+ print(test)
+}
+
+
+rcrare <- function(x, r, c, ind) {
+ test <- vector(mode = "numeric", length =  1000)
+ ComLoop <- vector(mode = "numeric", length =  1000)
+  for(i in seq_along(ComLoop)) {
+  m1 <- x[sample(x = seq_len(nrow(x)), size = r, replace = FALSE), sample(x = seq_len(ncol(x)), size = c, replace = FALSE)]
+  
+
+  
+  test[[i]] <- networklevel(m1, index = ind)
+  }
+ for(j in 1:length(test)) {
+   ifelse(is.na(test[[j]]), networklevel(x[sample(x = seq_len(nrow(x)), size = r), sample(x = seq_len(ncol(x)), size = c)], index = ind), test[[j]])
+ }
+ print(test)
+}
+```
+
+```{r}
+gutr.rar.h <- rcrare(gutr.net, 16,11, "H2")
+gutc.rar.h <- rcrare(gutc.net, 16,11, "H2")
+smer.rar.h <- rcrare(smer.net, 16,11, "H2")
+smec.rar.h <- rep(networklevel(smec.net, "H2"), 1000)
+smir.rar.h <- rcrare(smir.net, 16,11, "H2")
+smic.rar.h <- rep(networklevel(smic.net, "H2"), 1000)
+stor.rar.h <- rcrare(stor.net, 16,11, "H2")
+stoc.rar.h <- rcrare(stoc.net, 16,11, "H2")
+whor.rar.h <- rcrare(whor.net, 16,11, "H2")
+whoc.rar.h <- rcrare(whoc.net, 16,11, "H2")
+
+gutr.rar.lb <- rcrare(gutr.net, 16,11, "links per species")* 27/11
+gutc.rar.lb <- rcrare(gutc.net, 16,11, "links per species")* 27/11
+smer.rar.lb <- rcrare(smer.net, 16,11, "links per species")* 27/11
+smec.rar.lb <- rep(networklevel(smec.net, "links per species"), 1000)* 27/11
+smir.rar.lb <- rcrare(smir.net, 16,11, "links per species")* 27/11
+smic.rar.lb <- rep(networklevel(smic.net, "links per species"), 1000)* 21/5
+stor.rar.lb <- rcrare(stor.net, 16,11, "links per species")* 27/11
+stoc.rar.lb <- rcrare(stoc.net, 16,11, "links per species")* 27/11
+whor.rar.lb <- rcrare(whor.net, 16,11, "links per species")* 27/11
+whoc.rar.lb <- rcrare(whoc.net, 16,11, "links per species")* 27/11
+
+gutr.rar.lp <- rcrare(gutr.net, 16,11, "links per species")* 27/16
+gutc.rar.lp <- rcrare(gutc.net, 16,11, "links per species")* 27/16
+smer.rar.lp <- rcrare(smer.net, 16,11, "links per species")* 27/16
+smec.rar.lp <- rep(networklevel(smec.net, "links per species"), 1000)* 27/16
+smir.rar.lp <- rcrare(smir.net, 16,11, "links per species")* 27/16
+smic.rar.lp <- rep(networklevel(smic.net, "links per species"), 1000)* 21/16
+stor.rar.lp <- rcrare(stor.net, 16,11, "links per species")* 27/16
+stoc.rar.lp <- rcrare(stoc.net, 16,11, "links per species")* 27/16
+whor.rar.lp <- rcrare(whor.net, 16,11, "links per species")* 27/16
+whoc.rar.lp <- rcrare(whoc.net, 16,11, "links per species")* 27/16
+
+
+gutr.rar.no <- rcrare(gutr.net, 16,11, "NODF")
+gutc.rar.no <- rcrare(gutc.net, 16,11, "NODF")
+smer.rar.no <- rcrare(smer.net, 16,11, "NODF")
+smec.rar.no <- rep(networklevel(smec.net, "NODF"), 1000)
+smir.rar.no <- rcrare(smir.net, 16,11, "NODF")
+smic.rar.no <- rep(networklevel(smic.net, "NODF"), 1000)
+stor.rar.no <- rcrare(stor.net, 16,11, "NODF")
+stoc.rar.no <- rcrare(stoc.net, 16,11, "NODF")
+whor.rar.no <- rcrare(whor.net, 16,11, "NODF")
+whoc.rar.no <- rcrare(whoc.net, 16,11, "NODF")
+```
+
+```{r}
+#original rarefied traits
+
+rar.linksb <- c((gutr.rar.lb), (gutc.rar.lb), (smer.rar.lb), (smec.rar.lb), (smir.rar.lb), (smic.rar.lb), (stor.rar.lb), (stoc.rar.lb), (whor.rar.lb), (whoc.rar.lb))
+
+rar.linksp <- c((gutr.rar.lp), (gutc.rar.lp), (smer.rar.lp), (smec.rar.lp), (smir.rar.lp), (smic.rar.lp), (stor.rar.lp), (stoc.rar.lp), (whor.rar.lp), (whoc.rar.lp))
+
+rar.nodf <- c((gutr.rar.no), (gutc.rar.no), (smer.rar.no), (smec.rar.no), (smir.rar.no), (smic.rar.no), ((stor.rar.no)), (stoc.rar.no), ((whor.rar.no)), (whoc.rar.no))
+
+rar.h2 <- c((gutr.rar.h), (gutc.rar.h), ((smer.rar.h)), (smec.rar.h), ((smir.rar.h)), ((smic.rar.h)), ((stor.rar.h)), ((stoc.rar.h)), ((whor.rar.h)), (whoc.rar.h))
+
+
+Treatment <- c(rep(c(rep("Prairie Strips",1000), rep("Crop Fields", 1000)), 25))
+value <- c(rar.links, rar.nodf, rar.h2, rar.linksb, rar.linksp)
+test <- c( rep("Links per Species", 10000), rep("NODF", 10000), rep("Network-Level Specialization (H'2)", 10000), rep("Links per Bee Species", 10000), rep("Links per Plant Species", 10000))
+
+table <- data.frame(Treatment, value, test, site)
+#write.csv(table, file = "Network rarefied Traits.csv")
+table
+```
+
+```{r}
+rar.links.all <- c(gutr.rar.l, gutc.rar.l, smer.rar.l, smec.rar.l, smir.rar.l, smic.rar.l, stor.rar.l, stoc.rar.l, whor.rar.l, whoc.rar.l)
+rar.nodf.all <- c(gutr.rar.no, gutc.rar.no, smer.rar.no, smec.rar.no, smir.rar.no, smic.rar.no, stor.rar.no, stoc.rar.no, whor.rar.no, whoc.rar.no)
+rar.h2.all <- c(gutr.rar.h, gutc.rar.h, smer.rar.h, smec.rar.h, smir.rar.h, smic.rar.h, stor.rar.h, stoc.rar.h, whor.rar.h, whoc.rar.h)
+
+distvalues <- c(rar.links.all, rar.nodf.all, rar.h2.all)
+disttest <- c(rep("Links per Species", 10000), rep("NODF", 10000), rep("Network-Level Specialization", 10000))
+distsite <- c(rep(c(rep("GUT", 2000), rep("SME", 2000), rep("SMI", 2000), rep("STO", 2000), rep("WHO", 2000)), 3))
+disttrmt <- c(rep(c(rep("r", 1000), rep("c", 1000)), 15))
+distint <- c()
+for(i in 10){
+  distint <- c(distint, rep(rar.links[i],1000))
+}
+for(i in 10){
+  distint <- c(distint, rep(rar.nodf[i],1000))
+}
+for(i in 10){
+  distint <- c(distint, rep(rar.h2[i],1000))
+}
+
+distdata <- data.frame(distvalues, disttest, distsite, disttrmt, distint)
+write.csv(distdata, "distribution rare.csv")
+```
+
+```{r}
+distdata.l <- subset(distdata, distdata$disttest == "Links per Species")
+
+ggplot(data = distdata.l, aes(x = distvalues)) + geom_histogram() + geom_vline(aes(xintercept = distint)) + ggtitle("Links per Species") + facet_wrap(distsite~disttrmt, scales = "free", ncol = 2) 
+
+distdata.no <- subset(distdata, distdata$disttest == "NODF")
+
+ggplot(data = distdata.no, aes(x = distvalues)) + geom_histogram() + geom_vline(aes(xintercept = distint)) + ggtitle("NODF") + facet_wrap(distsite~disttrmt, scales = "free", ncol = 2) 
+
+distdata.h <- subset(distdata, distdata$disttest == "Network-Level Specialization")
+
+ggplot(data = distdata.h, aes(x = distvalues)) + geom_histogram() + geom_vline(aes(xintercept = distint)) + ggtitle("Network-Level Specialization") + facet_wrap(distsite~disttrmt, scales = "free", ncol = 2) 
+```
+
+
+###Graphs and tests
+```{r}
+#Overall Graphs, all together with facet_wrap
+
+table <- read.csv("Network Rarefied Traits.csv")
+
+table <- subset(table, table$test == c("NODF", "Network-Level Specialization (H'2)", "Links per Bee Species", "Links per Plant Species"))
+
+ggplot(data = table, aes(x = Treatment, y = value, color = Treatment)) + geom_boxplot() +  xlab("") + facet_wrap(~test, scales = "free", ncol = 4) + ylab("Value from Rarefied Networks (n = 1,000)") + theme(legend.position = "none")
+
+tempa <- subset(table, table$test == "Links per Bee Species")
+a <- ggplot(data = tempa, aes(x = Treatment, y = value, color = Treatment)) + geom_boxplot()  + xlab("") + ylab("Rarefied Network Metric Values") + ylim(0,5.5) + theme(legend.position = "none")
+
+tempb <- subset(table, table$test == "Links per Plant Species")
+b <- ggplot(data = tempb, aes(x = Treatment, y = value, color = Treatment)) + geom_boxplot()  + xlab("") + ylab("") + ylim(0,4.5) + theme(legend.position = "none")
+
+tempc <- subset(table, table$test == "Network-Level Specialization (H'2)")
+c <- ggplot(data = tempc, aes(x = Treatment, y = value, color = Treatment)) + geom_boxplot() + xlab("") + ylab("") + ylim(0,1) + theme(legend.position = "none")
+
+tempd <- subset(table, table$test == "NODF")
+d <- ggplot(data = tempd, aes(x = Treatment, y = value, color = Treatment)) + geom_boxplot()  + xlab("") + ylab("") + ylim(0,100) + theme(legend.position = "none")
+
+grid.arrange(a,b,c,d, nrow = 1)
+
+```
+
+Simple Mann U Whitney
+```{r}
+test.trmt <- rep(c(rep("c",1000), rep("r",1000)),5)
+wilcox.test(rar.linksb~test.trmt, conf.level = 0.99)
+
+wilcox.test(rar.linksp~test.trmt, conf.level = 0.99)
+
+wilcox.test(rar.nodf~test.trmt, conf.level = 0.99)
+
+wilcox.test(rar.h2~test.trmt, conf.level = 0.99)
+
+```
+
+Calculating bayes factor
+```{r}
+trmt <- rep(c(rep(c("c"),1000),rep(c("r"), 1000)), 20)
+site <- rep(c(rep(c("GUT"),2000),rep(c("SME"), 2000), rep(c("SMI"), 2000), rep(c("STO"), 2000), rep(c("WHO"), 2000)), 4)
+value <- c(rar.linksp, rar.linksb, rar.nodf, rar.h2)
+test <- c(rep("Links per Plant Species", 10000), rep("Links per Bee Species", 10000), rep("NODF", 10000), rep("Interaction Evenness", 10000))
+
+table <- data.frame(trmt, value, test, site)
+
+linksp <- subset(table, table$test == "Links per Plant Species")
+model.full <- lm(value ~ site + trmt, data = linksp)
+model.null <- lm(value ~ site, data = links)
+exp((BIC(model.null) - BIC(model.full))/2)
+exp((BIC(model.full) - BIC(model.null))/2)
+
+linksb <- subset(table, table$test == "Links per Bee Species")
+model.full <- lm(value ~ site + trmt, data = linksb)
+model.null <- lm(value ~ site, data = links)
+exp((BIC(model.null) - BIC(model.full))/2)
+exp((BIC(model.full) - BIC(model.null))/2)
+
+nodf <- subset(table, table$test == "NODF")
+model.full <- lm(value ~ site + trmt, data = nodf)
+model.null <- lm(value ~ site, data = nodf)
+exp((BIC(model.null) - BIC(model.full))/2)
+exp((BIC(model.full) - BIC(model.null))/2)
+
+h2 <- subset(table, table$test == "Interaction Evenness")
+model.full <- lm(value ~ site + trmt, data = h2)
+model.null <- lm(value ~ site, data = h2)
+exp((BIC(model.null) - BIC(model.full))/2)
+exp((BIC(model.full) - BIC(model.null))/2)
+```
+
+calculating power
+```{r}
+pwr.t.test(n = 5, sig.level = 0.01, type = c("two.sample"), power = 0.80)
+```
+
+
+
